@@ -245,8 +245,8 @@ class PlayerSelectScreen
 end
 
 class Asteroid
-  WIDTH = 50
-  HEIGHT = 4
+  WIDTH = 20 * 4
+  HEIGHT = 13 * 4
   SPEEDS = (1..4).to_a
   ROTATIONS = (-2..2).to_a
 
@@ -255,7 +255,7 @@ class Asteroid
     speed = SPEEDS.sample
     @rotation = ROTATIONS.sample
     @sprite = Sprite.new(
-      '',
+      'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\images\Idle.png',
       x:rand(Window.width),
       y: rand(Window.height),
       width: WIDTH * scale,
