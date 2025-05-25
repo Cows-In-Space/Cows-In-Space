@@ -6,7 +6,7 @@ set height: 720
 
 class Star
   def initialize
-    @y_velocity = rand(-8..0)
+    @y_velocity = rand(-5..0)
     @shape = Circle.new(
       x: rand(Window.width),
       y: rand(Window.height),
@@ -39,6 +39,8 @@ class Player
     @y = y
     @speed = speed
     @fire_rate = fire_rate
+    @projectiles = []
+    @last_projectile_fired_frame = 0
     @sprite = Sprite.new(
       image,
       clip_width: 32,
@@ -109,6 +111,10 @@ class Player
     elsif @sprite.y < -@sprite.height
       @sprite.y = Window.height + @sprite.height
     end
+
+    @projectiles.each do |projectile|
+      projectile.move
+    end
   end
 
   def slow_down
@@ -119,22 +125,37 @@ class Player
   def stop_accelerating
     animate_slow
   end
+
+  def fire_projectile
+    if @last_projectile_fired_frame + 25 - (@fire_rate / 10) < Window.frames
+      x_component = Math.sin(@sprite.rotate * Math::PI / 180)
+      y_component = -Math.cos(@sprite.rotate * Math::PI / 180)
+
+      x = @sprite.x + (@sprite.width * 0.5) + (x_component * @sprite.width)
+      y = @sprite.y + (@sprite.height * 0.5) + (y_component * @sprite.height)
+      direction = 0
+
+      @projectiles.push(Projectile.new(x, y, @sprite.rotate))
+      @projectiles = @projectiles.last(20)
+      @last_projectile_fired_frame = Window.frames
+    end
+  end
 end
 
 class PlayerSelectScreen
   def initialize
-    @stars = Array.new(275).map { Star.new }
+    @stars = Array.new(400).map { Star.new }
 
-    title_text = Text.new('Cows in Space', size: 72, y: 40, font: 'C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
+    title_text = Text.new('Cows in Space', size: 72, y: 40, font: 'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
     title_text.x = (Window.width - title_text.width) / 2
 
-    player_select_text = Text.new('Selecione seu jogador: ', size: 32, y: 130, font: 'C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
+    player_select_text = Text.new('Selecione seu jogador: ', size: 32, y: 130, font: 'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
     player_select_text.x = (Window.width - player_select_text.width) / 2
 
     @players = [
-      Player.new('C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\images\jogador 1.png', Window.width * (1/4.0) - Player::WIDTH / 2, 285, 80, 80),
-      Player.new('C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\images\jogador 2.png', Window.width * (2/4.0) - Player::WIDTH / 2, 285, 100, 60),
-      Player.new('C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\images\jogador 3.png', Window.width * (3/4.0) - Player::WIDTH / 2, 285, 60, 100),
+      Player.new('C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\images\jogador 1.png', Window.width * (1/4.0) - Player::WIDTH / 2, 240, 80, 80),
+      Player.new('C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\images\jogador 2.png', Window.width * (2/4.0) - Player::WIDTH / 2, 240, 100, 60),
+      Player.new('C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\images\jogador 3.png', Window.width * (3/4.0) - Player::WIDTH / 2, 240, 60, 100),
     ]
 
     @selected_player = 1
@@ -206,10 +227,10 @@ class PlayerSelectScreen
         color = Color.new([0.3,0.3,0.3,1])
       end
 
-      speed_text = Text.new("Velocidade - #{player.speed}%", size: 20, y: player.y + 200, color: color, font: 'C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
+      speed_text = Text.new("Velocidade - #{player.speed}%", size: 20, y: player.y + 200, color: color, font: 'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
       speed_text.x = player.x + ((Player::WIDTH - speed_text.width)/2)
 
-      fire_rate_text = Text.new("Quantia de disparo - #{player.fire_rate}%", size: 20, y: player.y + 220, color: color, font: 'C:\Users\niicf\RubymineProjects\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
+      fire_rate_text = Text.new("Quantia de disparo - #{player.fire_rate}%", size: 20, y: player.y + 220, color: color, font: 'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\fonts\PixelifySans-Regular.ttf')
       fire_rate_text.x = player.x + ((Player::WIDTH - fire_rate_text.width)/2)
 
       @player_stat_texts.push(speed_text)
@@ -223,17 +244,67 @@ class PlayerSelectScreen
   end
 end
 
+class Asteroid
+  WIDTH = 50
+  HEIGHT = 4
+  SPEEDS = (1..4).to_a
+  ROTATIONS = (-2..2).to_a
+
+  def initialize
+    scale = 0.5 + (rand * 1.5)
+    speed = SPEEDS.sample
+    @rotation = ROTATIONS.sample
+    @sprite = Sprite.new(
+      '',
+      x:rand(Window.width),
+      y: rand(Window.height),
+      width: WIDTH * scale,
+      height: HEIGHT * scale,
+      rotate: rand(360)
+    )
+
+    @x_velocity = Math.sin(@sprite.rotate * Math::PI / 180) * speed
+    @y_velocity = -Math.cos(@sprite.rotate * Math::PI / 180) * speed
+  end
+
+  def move
+    @sprite.rotate += @rotation
+    @sprite.x += @x_velocity
+    @sprite.y += @y_velocity
+
+    if @sprite.x > Window.width + @sprite.width
+      @sprite.x = -@sprite.width
+    elsif @sprite.x < -@sprite.width
+      @sprite.x = Window.width + @sprite.width
+    end
+
+    if @sprite.y > Window.height + @sprite.height
+      @sprite.y = -@sprite.height
+    elsif @sprite.y < -@sprite.height
+      @sprite.y = Window.height + @sprite.height
+    end
+  end
+end
+
 class GameScreen
+  MAX_ASTEROIDS = 8
   def initialize(player)
-    @stars = Array.new(100).map { Star.new }
+    @stars = Array.new(300).map { Star.new }
     @player = Player.new(player.image, player.x, player.y, player.speed, player.fire_rate)
     @player.animate_slow
+    @asteroids = []
   end
 
   def update
     if Window.frames % 2 == 0
       @stars.each { |star| star.move }
     end
+
+    if Window.frames % 120 == 0 && @asteroids.size <= MAX_ASTEROIDS
+      @asteroids.push(Asteroid.new)
+    end
+
+    @asteroids.each { |asteroid| asteroid.move }
 
     @player.move
     @player.slow_down
@@ -249,6 +320,34 @@ class GameScreen
 
   def stop_accelerating_player
     @player.stop_accelerating
+  end
+
+  def player_fire_projectile
+    @player.fire_projectile
+  end
+end
+
+class Projectile
+  WIDTH = 50 * 0.6
+  HEIGHT = 42 * 0.6
+  SPEED = 12
+  def initialize(x, y, rotate)
+    @image = Sprite.new(
+      'C:\Users\gonca\OneDrive\Documents\GitHub\Cows-In-Space\Game\assets\images\Pow Pow Tei Tei 2.0.png',
+      x: x,
+      y: y,
+      width: WIDTH,
+      height: HEIGHT,
+      rotate: rotate,
+    )
+
+    @x_velocity = Math.sin(@image.rotate * Math::PI / 180) * SPEED
+    @y_velocity = -Math.cos(@image.rotate * Math::PI / 180) * SPEED
+  end
+
+  def move
+    @image.x += @x_velocity
+    @image.y += @y_velocity
   end
 end
 
@@ -285,6 +384,8 @@ on :key_held do |event|
       current_screen.rotate_player(:left)
     when 'right'
       current_screen.rotate_player(:right)
+    when 'space'
+      current_screen.player_fire_projectile
     end
   end
 end
