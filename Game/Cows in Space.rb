@@ -168,13 +168,13 @@ class PlayerSelectScreen
       {image: File.join(ASSETS_PATH, 'images', 'jogador 2.png'), x: Window.width * (2/4.0) - Player::WIDTH / 2, y: 240, speed: 100, fire_rate: 60},
       {image: File.join(ASSETS_PATH, 'images', 'jogador 3.png'), x: Window.width * (3/4.0) - Player::WIDTH / 2, y: 240, speed: 60, fire_rate: 100},
     ]
-
+ 
     @display_players = @player_prototypes.map do |p_data|
       Player.new(p_data[:image], p_data[:x], p_data[:y], p_data[:speed], p_data[:fire_rate])
     end
 
 
-    @selected_player_index = 1 # Índice do jogador selecionado
+    @selected_player_index = 1
 
     animate_players
     add_player_masks
@@ -270,7 +270,7 @@ end
 
 class Asteroid
   WIDTH = 20 * 4
-  HEIGHT = 13 * 4
+  HEIGHT = 17 * 4
   SPEEDS = (1..4).to_a
   ROTATIONS = (-2..2).to_a
 
